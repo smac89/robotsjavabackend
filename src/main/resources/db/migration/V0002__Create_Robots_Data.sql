@@ -1,3 +1,5 @@
+SET search_path TO public;
+
 INSERT INTO robots (
     id, name, username, email
 ) VALUES

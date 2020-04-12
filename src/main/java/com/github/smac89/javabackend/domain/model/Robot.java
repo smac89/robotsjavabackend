@@ -1,15 +1,13 @@
 package com.github.smac89.javabackend.domain.model;
 
-import javax.persistence.Entity;
+import lombok.Builder;
+import lombok.Value;
 
-@Entity
+@Value
+@Builder
 public class Robot {
-    private Integer id;
-    private String name;
-    private String username;
-    private String email;
-
-    public Integer getId() {
-        return id;
-    }
+    Integer id;
+    String name;
+    String username;
+    String email;
 }

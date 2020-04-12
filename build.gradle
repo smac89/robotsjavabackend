@@ -1,14 +1,28 @@
+import nu.studer.gradle.jooq.JooqEdition
+
 plugins {
     id 'org.springframework.boot' version '2.2.6.RELEASE'
     id 'io.spring.dependency-management' version '1.0.9.RELEASE'
-    id "org.flywaydb.flyway" version "6.3.3"
     id "com.github.otkmnb2783.dotenv" version "0.0.1"
+    id "io.freefair.lombok" version "5.0.0-rc6"
+    id "org.flywaydb.flyway" version "6.3.3"
+    id 'nu.studer.jooq' version '4.1'
     id 'java'
 }
 
 group 'com.github.smac89'
 version '1.0'
 sourceCompatibility = '11'
+
+bootJar {
+    mainClassName = 'com.github.smac89.javabackend.Main'
+}
+
+bootRun {
+    jvmArgs "-Dspring.datasource.url=$project.env.POSTGRES_DB_URL",
+            "-Dspring.datasource.username=$project.env.POSTGRES_USER",
+            "-Dspring.datasource.password=$project.env.POSTGRES_PASSWORD"
+}
 
 configurations {
     flywayMigration
@@ -19,11 +33,55 @@ dotenv {
 }
 
 flyway {
-    // https://flywaydb.org/documentation/gradle/#environment-variables
+//    https://flywaydb.org/documentation/gradle/#environment-variables
     configurations = [project.configurations.flywayMigration.name]
     user = project.env.POSTGRES_USER
     password = project.env.POSTGRES_PASSWORD
     url = project.env.POSTGRES_DB_URL
+    defaultSchema = 'flyway'
+    schemas = ['flyway', 'public']
+}
+
+jooq {
+//    https://github.com/etiennestuder/gradle-jooq-plugin
+//    https://www.jooq.org/xsd/jooq-codegen-3.13.0.xsd
+    version = '3.13.0'
+    edition = JooqEdition.OSS
+    generateSchemaSourceOnCompilation = true
+    javaBackend(sourceSets.main) {
+        jdbc {
+            driver = 'org.postgresql.Driver'
+            url = project.env.POSTGRES_DB_URL
+            username = project.env.POSTGRES_USER
+            password = project.env.POSTGRES_PASSWORD
+        }
+
+        logging = 'INFO'
+
+        generator {
+            database {
+                inputSchema = 'public'
+            }
+
+            generate {
+                indexes = false
+                deprecated = false
+                generatedAnnotation = true
+            }
+
+            target {
+                directory = "$buildDir/generated/jooq"
+            }
+        }
+    }
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs("$buildDir/generated/jooq")
+        }
+    }
 }
 
 repositories {
@@ -31,7 +89,7 @@ repositories {
 }
 
 ext.libraries = [
-        spring_boot     : ['org.springframework.boot:spring-boot-starter-data-jpa',
+        spring_boot     : ['org.springframework.boot:spring-boot-starter-jooq',
                            'org.springframework.boot:spring-boot-starter-hateoas'],
         spring_boot_test: ['org.springframework.boot:spring-boot-starter-test'],
         postgres        : ['org.postgresql:postgresql'],
@@ -43,6 +101,9 @@ dependencies {
 
     flywayMigration libraries.flyway
     flywayMigration libraries.postgres
+
+    jooqRuntime libraries.postgres
+    runtimeOnly libraries.postgres
 
     testImplementation(libraries.spring_boot_test) {
         exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'

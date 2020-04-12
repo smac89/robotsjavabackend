@@ -1,4 +1,4 @@
-CREATE TABLE robots (
+CREATE TABLE public.robots (
     id int NOT NULL,
     name varchar(256) NOT NULL,
     username varchar(25) NOT NULL,
