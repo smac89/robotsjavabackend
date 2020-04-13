@@ -5,23 +5,24 @@ plugins {
     id 'io.spring.dependency-management' version '1.0.9.RELEASE'
     id "com.github.otkmnb2783.dotenv" version "0.0.1"
     id "io.freefair.lombok" version "5.0.0-rc6"
-    id "org.flywaydb.flyway" version "6.3.3"
     id 'nu.studer.jooq' version '4.1'
     id 'java'
 }
 
 group 'com.github.smac89'
 version '1.0'
-sourceCompatibility = '11'
+
+sourceCompatibility = '13'
 
 bootJar {
     mainClassName = 'com.github.smac89.javabackend.Main'
 }
 
 bootRun {
-    jvmArgs "-Dspring.datasource.url=$project.env.POSTGRES_DB_URL",
-            "-Dspring.datasource.username=$project.env.POSTGRES_USER",
-            "-Dspring.datasource.password=$project.env.POSTGRES_PASSWORD"
+    environment(project.env)
+//    environment "SPRING_CONFIG_ADDITIONAL_LOCATION", "$rootDir/spring.properties"
+    environment "SPRING_CONFIG_LOCATION", "file:$rootDir/config/"
+    environment "SPRING_CONFIG_NAME", "spring"
 }
 
 configurations {
@@ -32,25 +33,14 @@ dotenv {
     dir = project.rootDir
 }
 
-flyway {
-//    https://flywaydb.org/documentation/gradle/#environment-variables
-    configurations = [project.configurations.flywayMigration.name]
-    user = project.env.POSTGRES_USER
-    password = project.env.POSTGRES_PASSWORD
-    url = project.env.POSTGRES_DB_URL
-    defaultSchema = 'flyway'
-    schemas = ['flyway', 'public']
-}
-
 jooq {
-//    https://github.com/etiennestuder/gradle-jooq-plugin
-//    https://www.jooq.org/xsd/jooq-codegen-3.13.0.xsd
+    /*https://github.com/etiennestuder/gradle-jooq-plugin
+    https://www.jooq.org/xsd/jooq-codegen-3.13.0.xsd*/
     version = '3.13.0'
     edition = JooqEdition.OSS
     generateSchemaSourceOnCompilation = true
     javaBackend(sourceSets.main) {
         jdbc {
-            driver = 'org.postgresql.Driver'
             url = project.env.POSTGRES_DB_URL
             username = project.env.POSTGRES_USER
             password = project.env.POSTGRES_PASSWORD
@@ -70,16 +60,23 @@ jooq {
             }
 
             target {
-                directory = "$buildDir/generated/jooq"
+                directory = "$buildDir/jooq"
+                packageName = "${project.group}.generated"
             }
         }
     }
 }
 
+lombok {
+    config.'lombok.addGeneratedAnnotation' = 'true'
+    config.'lombok.val.flagUsage' = 'ERROR'
+    config.'lombok.var.flagUsage' = 'ERROR'
+}
+
 sourceSets {
     main {
         java {
-            srcDirs("$buildDir/generated/jooq")
+            srcDirs("$buildDir/jooq")
         }
     }
 }
@@ -99,8 +96,7 @@ ext.libraries = [
 dependencies {
     implementation libraries.spring_boot
 
-    flywayMigration libraries.flyway
-    flywayMigration libraries.postgres
+    runtimeOnly libraries.flyway
 
     jooqRuntime libraries.postgres
     runtimeOnly libraries.postgres

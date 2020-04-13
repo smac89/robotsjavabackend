@@ -1,7 +1,7 @@
 package com.github.smac89.javabackend.domain.marshal;
 
 import com.github.smac89.javabackend.controller.RobotsController;
-import com.github.smac89.javabackend.domain.model.Robot;
+import com.github.smac89.javabackend.domain.Robot;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.server.RepresentationModelAssembler;
 import org.springframework.stereotype.Component;

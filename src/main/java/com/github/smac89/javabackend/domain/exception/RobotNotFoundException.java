@@ -1,4 +1,4 @@
-package com.github.smac89.javabackend.domain;
+package com.github.smac89.javabackend.domain.exception;
 
 public class RobotNotFoundException extends RuntimeException {
     public RobotNotFoundException(Integer id) {

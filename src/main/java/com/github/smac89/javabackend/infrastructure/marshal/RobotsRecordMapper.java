@@ -1,8 +1,8 @@
 package com.github.smac89.javabackend.infrastructure.marshal;
 
-import com.github.smac89.javabackend.domain.model.Robot;
+import com.github.smac89.generated.tables.records.RobotsRecord;
+import com.github.smac89.javabackend.domain.Robot;
 import org.jooq.RecordMapper;
-import org.jooq.generated.tables.records.RobotsRecord;
 import org.springframework.stereotype.Component;
 
 @Component

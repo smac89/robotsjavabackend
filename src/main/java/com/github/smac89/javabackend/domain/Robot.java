@@ -1,4 +1,4 @@
-package com.github.smac89.javabackend.domain.model;
+package com.github.smac89.javabackend.domain;
 
 import lombok.Builder;
 import lombok.Value;

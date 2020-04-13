@@ -1,6 +1,6 @@
 package com.github.smac89.javabackend.service;
 
-import com.github.smac89.javabackend.domain.RobotNotFoundException;
+import com.github.smac89.javabackend.domain.exception.RobotNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
