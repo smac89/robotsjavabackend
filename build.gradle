@@ -6,6 +6,7 @@ plugins {
     id "com.github.otkmnb2783.dotenv" version "0.0.1"
     id "io.freefair.lombok" version "5.0.0-rc6"
     id 'nu.studer.jooq' version '4.1'
+    id "org.flywaydb.flyway" version "6.3.3"
     id 'java'
 }
 
@@ -19,18 +20,25 @@ bootJar {
 }
 
 bootRun {
+    //noinspection GroovyAssignabilityCheck
     environment(project.env)
-//    environment "SPRING_CONFIG_ADDITIONAL_LOCATION", "$rootDir/spring.properties"
+
+    /*environment "SPRING_CONFIG_ADDITIONAL_LOCATION", "$rootDir/spring.properties"*/
     environment "SPRING_CONFIG_LOCATION", "file:$rootDir/config/"
     environment "SPRING_CONFIG_NAME", "spring"
 }
 
-configurations {
-    flywayMigration
-}
-
 dotenv {
     dir = project.rootDir
+}
+
+flyway {
+    /*https://flywaydb.org/documentation/gradle/#environment-variables*/
+    user = project.env.POSTGRES_USER
+    password = project.env.POSTGRES_PASSWORD
+    url = project.env.POSTGRES_DB_URL
+    defaultSchema = 'flyway'
+    schemas = ['flyway', 'public']
 }
 
 jooq {
@@ -67,6 +75,8 @@ jooq {
     }
 }
 
+generateJavaBackendJooqSchemaSource.dependsOn flywayMigrate
+
 lombok {
     config.'lombok.addGeneratedAnnotation' = 'true'
     config.'lombok.val.flagUsage' = 'ERROR'
@@ -81,6 +91,17 @@ sourceSets {
     }
 }
 
+compileJava {
+    doFirst {
+        options.compilerArgs = [
+                /*https://mapstruct.org/documentation/stable/reference/html/*/
+                '-Amapstruct.suppressGeneratorTimestamp=true',
+                '-Amapstruct.suppressGeneratorVersionInfoComment=false',
+                '-Amapstruct.defaultComponentModel=spring',
+        ]
+    }
+}
+
 repositories {
     mavenCentral()
 }
@@ -90,7 +111,10 @@ ext.libraries = [
                            'org.springframework.boot:spring-boot-starter-hateoas'],
         spring_boot_test: ['org.springframework.boot:spring-boot-starter-test'],
         postgres        : ['org.postgresql:postgresql'],
-        flyway          : ['org.flywaydb:flyway-core']
+        flyway          : ['org.flywaydb:flyway-core'],
+        mapstruct       : ['org.mapstruct:mapstruct:1.3.1.Final'],
+        mapstruct_proc  : ['org.mapstruct:mapstruct-processor:1.3.1.Final'],
+
 ]
 
 dependencies {
@@ -100,6 +124,9 @@ dependencies {
 
     jooqRuntime libraries.postgres
     runtimeOnly libraries.postgres
+
+    compileOnly libraries.mapstruct
+    annotationProcessor libraries.mapstruct_proc
 
     testImplementation(libraries.spring_boot_test) {
         exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
