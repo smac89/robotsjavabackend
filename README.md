@@ -1,3 +1,6 @@
 ## Java Backend For RobotFriends
 
-### This is a springboot application. Created with https://start.spring.io/
+### Created with [SpringBoot](https://start.spring.io/)
+
+### See [RoboFriends](https://github.com/devevangel/robofriends).
+

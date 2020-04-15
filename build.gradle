@@ -23,7 +23,6 @@ bootRun {
     //noinspection GroovyAssignabilityCheck
     environment(project.env)
 
-    /*environment "SPRING_CONFIG_ADDITIONAL_LOCATION", "$rootDir/spring.properties"*/
     environment "SPRING_CONFIG_LOCATION", "file:$rootDir/config/"
     environment "SPRING_CONFIG_NAME", "spring"
 }
