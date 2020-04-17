@@ -107,14 +107,10 @@ repositories {
     mavenCentral()
 }
 
-afterEvaluate {
-    println System.getenv()
-}
-
 ext.env = project.extensions.findByName('env') ?: [
-        POSTGRES_USER               : System.getenv('POSTGRES_USER'),
-        POSTGRES_PASSWORD           : System.getenv('POSTGRES_PASSWORD'),
-        POSTGRES_DB_URL             : System.getenv('POSTGRES_DB_URL'),
+        POSTGRES_USER               : System.getenv('SPRING_DATASOURCE_USERNAME'),
+        POSTGRES_PASSWORD           : System.getenv('SPRING_DATASOURCE_PASSWORD'),
+        POSTGRES_DB_URL             : System.getenv('SPRING_DATASOURCE_URL'),
 ]
 
 ext.libraries = [
