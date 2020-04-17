@@ -107,6 +107,10 @@ repositories {
     mavenCentral()
 }
 
+afterEvaluate {
+    println System.getenv()
+}
+
 ext.env = project.extensions.findByName('env') ?: [
         POSTGRES_USER               : System.getenv('POSTGRES_USER'),
         POSTGRES_PASSWORD           : System.getenv('POSTGRES_PASSWORD'),
