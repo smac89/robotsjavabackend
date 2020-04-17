@@ -1,1 +1,1 @@
-web: ./build/run/bin/JavaBackEnd
+web: ./build/run/bin/JavaBackEnd --server.port=$PORT
