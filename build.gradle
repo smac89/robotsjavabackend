@@ -13,7 +13,7 @@ plugins {
 group 'com.github.smac89'
 version '1.0'
 
-sourceCompatibility = '13'
+sourceCompatibility = '11'
 
 application {
     mainClassName = 'com.github.smac89.javabackend.Main'
@@ -74,8 +74,6 @@ afterEvaluate {
             }
         }
     }
-
-    generateJavaBackendJooqSchemaSource.dependsOn flywayMigrate
 }
 
 lombok {
@@ -152,7 +150,7 @@ task stage(dependsOn: ['build', 'clean'], group: 'build') {
     finalizedBy('installDist')
 }
 
-tasks.findByName("build").mustRunAfter('clean')
+tasks.findByName("build")?.mustRunAfter('clean')
 
 installDist {
     destinationDir file("$buildDir/run")
