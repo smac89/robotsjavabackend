@@ -1,13 +1,13 @@
 import nu.studer.gradle.jooq.JooqEdition
 
 plugins {
+    id 'application'
     id 'org.springframework.boot' version '2.2.6.RELEASE'
     id 'io.spring.dependency-management' version '1.0.9.RELEASE'
     id "com.github.otkmnb2783.dotenv" version "0.0.1"
     id "io.freefair.lombok" version "5.0.0-rc6"
     id 'nu.studer.jooq' version '4.1'
     id "org.flywaydb.flyway" version "6.3.3"
-    id 'application'
 }
 
 group 'com.github.smac89'
@@ -17,6 +17,17 @@ sourceCompatibility = '11'
 
 application {
     mainClassName = 'com.github.smac89.javabackend.Main'
+}
+
+jar {
+    enabled = true
+}
+
+bootJar {
+    archiveClassifier.set('boot')
+    manifest {
+        attributes('Start-Class': mainClassName)
+    }
 }
 
 dotenv {
@@ -99,6 +110,10 @@ compileJava {
                 '-Amapstruct.defaultComponentModel=spring',
         ]
     }
+}
+
+tasks.withType(nu.studer.gradle.jooq.JooqTask) {
+    dependsOn flywayMigrate
 }
 
 repositories {
