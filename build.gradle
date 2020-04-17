@@ -7,7 +7,7 @@ plugins {
     id "io.freefair.lombok" version "5.0.0-rc6"
     id 'nu.studer.jooq' version '4.1'
     id "org.flywaydb.flyway" version "6.3.3"
-    id 'java'
+    id 'application'
 }
 
 group 'com.github.smac89'
@@ -15,66 +15,68 @@ version '1.0'
 
 sourceCompatibility = '13'
 
-bootJar {
+application {
     mainClassName = 'com.github.smac89.javabackend.Main'
-}
-
-bootRun {
-    //noinspection GroovyAssignabilityCheck
-    environment(project.env)
-
-    environment "SPRING_CONFIG_LOCATION", "file:$rootDir/config/"
-    environment "SPRING_CONFIG_NAME", "spring"
 }
 
 dotenv {
     dir = project.rootDir
 }
 
-flyway {
-    /*https://flywaydb.org/documentation/gradle/#environment-variables*/
-    user = project.env.POSTGRES_USER
-    password = project.env.POSTGRES_PASSWORD
-    url = project.env.POSTGRES_DB_URL
-    defaultSchema = 'flyway'
-    schemas = ['flyway', 'public']
-}
+afterEvaluate {
+    bootRun {
+        //noinspection GroovyAssignabilityCheck
+        environment(project.env)
 
-jooq {
-    /*https://github.com/etiennestuder/gradle-jooq-plugin
-    https://www.jooq.org/xsd/jooq-codegen-3.13.0.xsd*/
-    version = '3.13.0'
-    edition = JooqEdition.OSS
-    generateSchemaSourceOnCompilation = true
-    javaBackend(sourceSets.main) {
-        jdbc {
-            url = project.env.POSTGRES_DB_URL
-            username = project.env.POSTGRES_USER
-            password = project.env.POSTGRES_PASSWORD
-        }
+        environment "SPRING_CONFIG_LOCATION", "file:$rootDir/config/"
+        environment "SPRING_CONFIG_NAME", "spring"
+    }
 
-        logging = 'INFO'
+    flyway {
+        /*https://flywaydb.org/documentation/gradle/#environment-variables*/
+        user = project.env.POSTGRES_USER
+        password = project.env.POSTGRES_PASSWORD
+        url = project.env.POSTGRES_DB_URL
+        defaultSchema = 'flyway'
+        schemas = ['flyway', 'public']
+    }
 
-        generator {
-            database {
-                inputSchema = 'public'
+    jooq {
+        /*https://github.com/etiennestuder/gradle-jooq-plugin
+        https://www.jooq.org/xsd/jooq-codegen-3.13.0.xsd*/
+        version = '3.13.0'
+        edition = JooqEdition.OSS
+        generateSchemaSourceOnCompilation = true
+        javaBackend(sourceSets.main) {
+            jdbc {
+                url = project.env.POSTGRES_DB_URL
+                username = project.env.POSTGRES_USER
+                password = project.env.POSTGRES_PASSWORD
             }
 
-            generate {
-                indexes = false
-                deprecated = false
-                generatedAnnotation = true
-            }
+            logging = 'INFO'
 
-            target {
-                directory = "$buildDir/jooq"
-                packageName = "${project.group}.generated"
+            generator {
+                database {
+                    inputSchema = 'public'
+                }
+
+                generate {
+                    indexes = false
+                    deprecated = false
+                    generatedAnnotation = true
+                }
+
+                target {
+                    directory = "$buildDir/jooq"
+                    packageName = "${project.group}.generated"
+                }
             }
         }
     }
-}
 
-generateJavaBackendJooqSchemaSource.dependsOn flywayMigrate
+    generateJavaBackendJooqSchemaSource.dependsOn flywayMigrate
+}
 
 lombok {
     config.'lombok.addGeneratedAnnotation' = 'true'
@@ -105,6 +107,12 @@ repositories {
     mavenCentral()
 }
 
+ext.env = project.extensions.findByName('env') ?: [
+        POSTGRES_USER               : System.getenv('POSTGRES_USER'),
+        POSTGRES_PASSWORD           : System.getenv('POSTGRES_PASSWORD'),
+        POSTGRES_DB_URL             : System.getenv('POSTGRES_DB_URL'),
+]
+
 ext.libraries = [
         spring_boot     : ['org.springframework.boot:spring-boot-starter-jooq',
                            'org.springframework.boot:spring-boot-starter-hateoas'],
@@ -113,13 +121,12 @@ ext.libraries = [
         flyway          : ['org.flywaydb:flyway-core'],
         mapstruct       : ['org.mapstruct:mapstruct:1.3.1.Final'],
         mapstruct_proc  : ['org.mapstruct:mapstruct-processor:1.3.1.Final'],
-
 ]
 
 dependencies {
     implementation libraries.spring_boot
 
-    runtimeOnly libraries.flyway
+    compileOnly libraries.flyway
 
     jooqRuntime libraries.postgres
     runtimeOnly libraries.postgres
@@ -139,4 +146,14 @@ test {
 wrapper {
     distributionType = Wrapper.DistributionType.BIN
     gradleVersion = '6.3'
+}
+
+task stage(dependsOn: ['build', 'clean'], group: 'build') {
+    finalizedBy('installDist')
+}
+
+tasks.findByName("build").mustRunAfter('clean')
+
+installDist {
+    destinationDir file("$buildDir/run")
 }
