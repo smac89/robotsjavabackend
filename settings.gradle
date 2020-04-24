@@ -1,3 +1,10 @@
+plugins {
+    id 'org.kordamp.gradle.settings' version '0.33.0'
+}
+
 rootProject.name = 'JavaBackEnd'
 
+projects {
+    excludes = ['dev']
+}
 // Spring boot application

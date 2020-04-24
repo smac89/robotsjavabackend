@@ -33,6 +33,7 @@ public class RobotsController {
 
     @GetMapping(produces = MediaTypes.HAL_JSON_VALUE)
     public CollectionModel<EntityModel<Robot>> getAllRobots() {
-        return robotModelMarshaller.toCollectionModel(robotsService.getRobots());
+        var robots = robotsService.getRobots();
+        return robotModelMarshaller.toCollectionModel(robots);
     }
 }

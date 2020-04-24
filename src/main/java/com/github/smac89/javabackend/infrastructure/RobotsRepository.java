@@ -1,7 +1,7 @@
 package com.github.smac89.javabackend.infrastructure;
 
 import com.github.smac89.javabackend.domain.Robot;
-import com.github.smac89.javabackend.domain.exception.RobotNotFoundException;
+import com.github.smac89.javabackend.infrastructure.exception.RobotNotFoundException;
 import com.github.smac89.javabackend.infrastructure.mapper.RobotsRecordMapper;
 import lombok.AllArgsConstructor;
 import org.jooq.DSLContext;
@@ -21,12 +21,12 @@ public class RobotsRepository implements com.github.smac89.javabackend.repositor
     public Robot getRobotById(Integer id) {
         return create.selectFrom(ROBOTS)
                      .where(ROBOTS.ID.eq(id))
-                     .fetchOptional(robotsRecordMapper::map)
+                     .fetchOptional(robotsRecordMapper::toRobot)
                      .orElseThrow(() -> new RobotNotFoundException(id));
     }
 
     @Override
     public List<Robot> findAllRobots() {
-        return create.selectFrom(ROBOTS).fetch(robotsRecordMapper::map);
+        return create.selectFrom(ROBOTS).fetch(robotsRecordMapper::toRobot);
     }
 }

@@ -8,5 +8,5 @@ import org.springframework.stereotype.Component;
 @Mapper
 @Component
 public interface RobotsRecordMapper {
-    Robot map(RobotsRecord record);
+    Robot toRobot(RobotsRecord record);
 }
