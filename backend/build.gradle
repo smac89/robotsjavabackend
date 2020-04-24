@@ -3,6 +3,7 @@ import nu.studer.gradle.jooq.JooqTask
 
 plugins {
     id 'application'
+    id 'org.springframework.boot'
     id "com.github.otkmnb2783.dotenv" version "0.0.1"
     id "io.freefair.lombok" version "5.0.0-rc6"
     id 'nu.studer.jooq' version '4.1'
@@ -30,7 +31,7 @@ afterEvaluate {
         //noinspection GroovyAssignabilityCheck
         environment(project.env)
 
-        environment "SPRING_CONFIG_LOCATION", "file:$rootDir/dev/config/"
+        environment "SPRING_CONFIG_LOCATION", "file:$rootProject.rootDir/dev/config/"
         environment "SPRING_CONFIG_NAME", "spring"
     }
 

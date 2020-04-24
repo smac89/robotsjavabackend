@@ -1,1 +1,1 @@
-web: ./build/run/bin/JavaBackEnd --server.port=$PORT --server.error.whitelabel.enabled=false
+web: ./build/run/bin/backend --server.port=$PORT --server.error.whitelabel.enabled=false
