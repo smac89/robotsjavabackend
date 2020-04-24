@@ -1,24 +1,11 @@
-import nu.studer.gradle.jooq.JooqEdition
-import nu.studer.gradle.jooq.JooqTask
+import org.springframework.boot.gradle.plugin.SpringBootPlugin
 
 plugins {
-    id 'application'
-    id 'org.springframework.boot' version '2.2.6.RELEASE'
-    id 'io.spring.dependency-management' version '1.0.9.RELEASE'
-    id "com.github.otkmnb2783.dotenv" version "0.0.1"
-    id "io.freefair.lombok" version "5.0.0-rc6"
-    id 'nu.studer.jooq' version '4.1'
-    id "org.flywaydb.flyway" version "6.3.3"
-    id 'groovy'
-    id "org.kordamp.gradle.functional-test" version '0.33.0'
+    id 'org.springframework.boot' version '2.2.6.RELEASE' apply false
+    id 'io.spring.dependency-management' version '1.0.9.RELEASE' apply false
+    id "org.kordamp.gradle.base" version '0.33.0'
 }
 
-group 'com.github.smac89'
-version '1.0'
-
-sourceCompatibility = '11'
-
-// http://kordamp.org/kordamp-gradle-plugins/#_org_kordamp_gradle_base_dsl
 config {
     info {
         description = 'Spring boot backend'
@@ -31,149 +18,50 @@ config {
     }
 }
 
-application {
-    mainClassName = 'com.github.smac89.javabackend.Main'
-}
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'io.spring.dependency-management'
+    apply plugin: 'org.springframework.boot', to: project(':backend')
+    apply plugin: 'groovy'
 
-bootJar {
-    archiveClassifier.set('boot')
-    manifest {
-        attributes('Start-Class': mainClassName)
-    }
-}
+    group 'com.github.smac89'
+    version '1.0'
 
-dotenv {
-    dir = project.rootDir
-}
+    sourceCompatibility = '11'
 
-afterEvaluate {
-    bootRun {
-        //noinspection GroovyAssignabilityCheck
-        environment(project.env)
-
-        environment "SPRING_CONFIG_LOCATION", "file:$rootDir/dev/config/"
-        environment "SPRING_CONFIG_NAME", "spring"
+    repositories {
+        mavenCentral()
+        jcenter()
     }
 
-    flyway {
-        /*https://flywaydb.org/documentation/gradle/#environment-variables*/
-        user = project.env.POSTGRES_USER
-        password = project.env.POSTGRES_PASSWORD
-        url = project.env.POSTGRES_DB_URL
-        defaultSchema = 'flyway'
-        schemas = ['flyway', 'public']
+    dependencyManagement {
+        imports {
+            mavenBom SpringBootPlugin.BOM_COORDINATES
+        }
     }
 
-    jooq {
-        /*https://github.com/etiennestuder/gradle-jooq-plugin
-        https://www.jooq.org/xsd/jooq-codegen-3.13.0.xsd*/
-        version = '3.13.0'
-        edition = JooqEdition.OSS
-        generateSchemaSourceOnCompilation = true
-        javaBackend(sourceSets.main) {
-            jdbc {
-                url = project.env.POSTGRES_DB_URL
-                username = project.env.POSTGRES_USER
-                password = project.env.POSTGRES_PASSWORD
-            }
-
-            logging = 'INFO'
-
-            generator {
-                database {
-                    inputSchema = 'public'
-                }
-
-                generate {
-                    indexes = false
-                    deprecated = false
-                    generatedAnnotation = true
-                }
-
-                target {
-                    directory = "$buildDir/jooq"
-                    packageName = "${project.group}.generated"
+    configurations.all {
+        resolutionStrategy {
+            eachDependency { DependencyResolveDetails details ->
+                if (details.requested.group == 'org.codehaus.groovy') {
+                    details.useVersion('3.0.3')
                 }
             }
         }
     }
-}
 
-configurations.all {
-    resolutionStrategy {
-        eachDependency { DependencyResolveDetails details ->
-            if (details.requested.group == 'org.codehaus.groovy') {
-                details.useVersion('3.0.3')
-            }
-        }
-    }
-}
-
-tasks.withType(Test) {
-    useJUnitPlatform()
-}
-
-tasks.withType(JooqTask) {
-    dependsOn flywayMigrate
-}
-
-lombok {
-    config.'lombok.addGeneratedAnnotation' = 'true'
-    config.'lombok.val.flagUsage' = 'ERROR'
-    config.'lombok.var.flagUsage' = 'ERROR'
-}
-
-sourceSets {
-    main {
-        java {
-            srcDirs("$buildDir/jooq")
-        }
-    }
-}
-
-compileJava {
-    doFirst {
-        options.compilerArgs = [
-                /*https://mapstruct.org/documentation/stable/reference/html/*/
-                '-Amapstruct.suppressGeneratorTimestamp=true',
-                '-Amapstruct.suppressGeneratorVersionInfoComment=false',
-                '-Amapstruct.defaultComponentModel=spring',
-        ]
-    }
-}
-
-repositories {
-    mavenCentral()
-    jcenter()
-}
-
-ext.libraries = [
-        spring_boot     : ['org.springframework.boot:spring-boot-starter-jooq',
-                           'org.springframework.boot:spring-boot-starter-hateoas'],
-        spring_boot_test: [project.dependencies.create('org.springframework.boot:spring-boot-starter-test') {
-            exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
-        }],
-        postgres        : ['org.postgresql:postgresql'],
-        flyway          : ['org.flywaydb:flyway-core'],
-        mapstruct       : ['org.mapstruct:mapstruct:1.3.1.Final'],
-        mapstruct_proc  : ['org.mapstruct:mapstruct-processor:1.3.1.Final'],
-        spock           : ['org.spockframework:spock-spring:2.0-M2-groovy-3.0'],
-        easy_random     : ['org.jeasy:easy-random-core:4.2.0']
-]
-
-dependencies {
-    implementation libraries.spring_boot
-
-    compileOnly libraries.flyway
-
-    jooqRuntime libraries.postgres
-    runtimeOnly libraries.postgres
-
-    compileOnly libraries.mapstruct
-    annotationProcessor libraries.mapstruct_proc
-
-    testImplementation (libraries.spring_boot_test + libraries.easy_random + libraries.spock)
-    functionalTestImplementation (libraries.spring_boot_test + libraries.easy_random + libraries.spock)
+    ext.libraries = [
+            groovy          : 'org.codehaus.groovy:groovy',
+            spring_boot     : 'org.springframework.boot:spring-boot-starter-jooq',
+            spring_hateoas  : 'org.springframework.boot:spring-boot-starter-hateoas',
+            spring_test     : 'org.springframework.boot:spring-boot-starter-test',
+            postgres        : 'org.postgresql:postgresql',
+            flyway          : 'org.flywaydb:flyway-core',
+            mapstruct       : 'org.mapstruct:mapstruct:1.3.1.Final',
+            mapstruct_proc  : 'org.mapstruct:mapstruct-processor:1.3.1.Final',
+            spock           : 'org.spockframework:spock-spring:2.0-M2-groovy-3.0',
+            easy_random     : 'org.jeasy:easy-random-core:4.2.0'
+    ]
 }
 
 wrapper {
@@ -182,5 +70,5 @@ wrapper {
 }
 
 if (System.getenv('HEROKU_ENV')) {
-    apply from: "gradle/config/heroku.gradle"
+    apply from: "gradle/config/heroku.gradle", to: project(':backend')
 }

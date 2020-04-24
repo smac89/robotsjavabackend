@@ -1,0 +1,138 @@
+import nu.studer.gradle.jooq.JooqEdition
+import nu.studer.gradle.jooq.JooqTask
+
+plugins {
+    id 'application'
+    id "com.github.otkmnb2783.dotenv" version "0.0.1"
+    id "io.freefair.lombok" version "5.0.0-rc6"
+    id 'nu.studer.jooq' version '4.1'
+    id "org.flywaydb.flyway" version "6.3.3"
+    id "org.kordamp.gradle.functional-test" version '0.33.0'
+}
+
+application {
+    mainClassName = 'com.github.smac89.javabackend.Main'
+}
+
+bootJar {
+    archiveClassifier.set('boot')
+    manifest {
+        attributes('Start-Class': mainClassName)
+    }
+}
+
+dotenv {
+    dir = rootProject.rootDir
+}
+
+afterEvaluate {
+    bootRun {
+        //noinspection GroovyAssignabilityCheck
+        environment(project.env)
+
+        environment "SPRING_CONFIG_LOCATION", "file:$rootDir/dev/config/"
+        environment "SPRING_CONFIG_NAME", "spring"
+    }
+
+    flyway {
+        /*https://flywaydb.org/documentation/gradle/#environment-variables*/
+        user = project.env.POSTGRES_USER
+        password = project.env.POSTGRES_PASSWORD
+        url = project.env.POSTGRES_DB_URL
+        defaultSchema = 'flyway'
+        schemas = ['flyway', 'public']
+    }
+
+    jooq {
+        /*https://github.com/etiennestuder/gradle-jooq-plugin
+        https://www.jooq.org/xsd/jooq-codegen-3.13.0.xsd*/
+        version = '3.13.0'
+        edition = JooqEdition.OSS
+        generateSchemaSourceOnCompilation = true
+        javaBackend(sourceSets.main) {
+            jdbc {
+                url = project.env.POSTGRES_DB_URL
+                username = project.env.POSTGRES_USER
+                password = project.env.POSTGRES_PASSWORD
+            }
+
+            logging = 'INFO'
+
+            generator {
+                database {
+                    inputSchema = 'public'
+                }
+
+                generate {
+                    indexes = false
+                    deprecated = false
+                    generatedAnnotation = true
+                }
+
+                target {
+                    directory = "$buildDir/jooq"
+                    packageName = "${project.group}.generated"
+                }
+            }
+        }
+    }
+}
+
+tasks.withType(Test) {
+    useJUnitPlatform()
+}
+
+tasks.withType(JooqTask) {
+    dependsOn flywayMigrate
+}
+
+lombok {
+    config.'lombok.addGeneratedAnnotation' = 'true'
+    config.'lombok.val.flagUsage' = 'ERROR'
+    config.'lombok.var.flagUsage' = 'ERROR'
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs("$buildDir/jooq")
+        }
+    }
+}
+
+compileJava {
+    doFirst {
+        options.compilerArgs = [
+                /*https://mapstruct.org/documentation/stable/reference/html/*/
+                '-Amapstruct.suppressGeneratorTimestamp=true',
+                '-Amapstruct.suppressGeneratorVersionInfoComment=false',
+                '-Amapstruct.defaultComponentModel=spring',
+        ]
+    }
+}
+
+def spring_test_dependency = project.dependencies.create(libraries.spring_test) {
+    exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+}
+
+dependencies {
+    implementation libraries.spring_boot
+    implementation libraries.spring_hateoas
+
+    compileOnly libraries.flyway
+
+    jooqRuntime libraries.postgres
+    runtimeOnly libraries.postgres
+
+    compileOnly libraries.mapstruct
+    annotationProcessor libraries.mapstruct_proc
+
+    testImplementation libraries.spock
+    functionalTestImplementation libraries.spock
+
+    testImplementation spring_test_dependency
+    functionalTestImplementation spring_test_dependency
+
+    testImplementation (project(':backpack'))
+    functionalTestImplementation (project(':backpack'))
+}

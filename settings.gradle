@@ -5,6 +5,8 @@ plugins {
 rootProject.name = 'JavaBackEnd'
 
 projects {
+    layout = 'standard'
+    enforceNamingConvention = false
     excludes = ['dev']
 }
 // Spring boot application

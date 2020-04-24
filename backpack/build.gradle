@@ -1,0 +1,9 @@
+plugins {
+    id 'java-library'
+}
+
+dependencies {
+    api libraries.easy_random
+    implementation libraries.spring_boot
+    implementation libraries.groovy
+}
